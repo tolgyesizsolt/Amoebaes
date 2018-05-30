@@ -84,15 +84,17 @@
 
     		canvas.getContext('2d').scale(scaleFactor,scaleFactor);
 
-            canvas.addEventListener('touchstart', function(e) {
+            //canvas.addEventListener('touchstart', function(e) {
                 //alert("touchscreen!");
-                var x = e.touches[0].pageX/2;
-                var y = e.touches[0].pagey/2;
+                //var x = e.touches[0].pageX/2;
+                //var y = e.touches[0].pagey/2;
+                //var x = e.PageX;
+                //var y = e.Pagey;
             //var touchx = event.touches[0].pageX;
             //var touchy = event.touches[0].pagey;
-                food_list.push(new Food(x,y,5));
+                //food_list.push(new Food(x,y,5));
 
-            });
+            //});
 
     		for (var i = 0; i < amoebaes_list.length; i++) {
     			amoebaes_list[i].DrawOut(canvas);
@@ -187,6 +189,7 @@
     	}
 
     	function AddFood(event){
+            //alert(event.type);
 
     		var x = event.clientX/2;
     		var y = event.clientY/2;
