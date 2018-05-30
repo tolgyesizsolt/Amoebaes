@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Title of the document</title>
+	<style>
+	body{
+		height: 100vh;
+		width: 100vw;
+		margin: 1vh;
+		overflow: hidden;
+	}
+	canvas{
+	}
+</style>
+</head>
+<body>
+	<script src="dat.gui.min.js"></script>
+	<script defer="defer">
+		var starting_number = 1;
+		var amoebaes_list = [];
+		var food_list = [];
+        //var color_list = [];
+		
+		var gui = new dat.GUI({width: 390});
+// Főmenü paraméterei-----------------------------------------------------------
+		var parameters =
+		{
+		    forgatas: false, // boolean (checkbox)
+		    starting_num : 1,
+		    start: function() { Generateamoebae(starting_number) },
+		};
+// Paraméterek hozzáadása és kiegészitése qa GUI-hoz--------------------------
+
+		var foldermain = gui.addFolder('Főadatok');/*Folder*/
+		var Startingnum = foldermain.add(parameters, 'starting_num').min(1).max(5).step(1).name('A kezdő amőbák száma').listen();
+        Startingnum.onChange(function(value) // onFinishChange
+        	{starting_number = Math.round(value)});
+        foldermain.add( parameters, 'start' ).name("Amőba generálása");
+        foldermain.open();
+    </script>
+    <canvas id="level" onclick="AddFood(event)"></canvas>
+    <script>
+
+    	var iWidth = (window.innerWidth-(window.innerWidth/100));
+    	var iHeight = (window.innerHeight-(window.innerHeight/50));
+
+    	function loop(timestamp) {
+    		var progress = timestamp - lastRender
+
+    		for (var i = 0; i < amoebaes_list.length; i++) {
+                var tempArray = amoebaes_list.slice();
+                removeObjectFromList(tempArray[i],tempArray);
+                if (!amoebaes_list[i].IsTargetInRange(tempArray,iWidth,iHeight)){
+                    if (!amoebaes_list[i].IsTargetInRange(food_list,iWidth,iHeight)){
+    				    amoebaes_list[i].Move(iWidth/2,iHeight/2);
+                    }
+                }
+    		}
+
+    		draw()
+
+    		lastRender = timestamp
+    		window.requestAnimationFrame(loop)
+    	}
+    	var lastRender = 0
+    	window.requestAnimationFrame(loop)
+
+
+    	function draw() {
+    		var canvas = document.getElementById("level");
+    		var ctx = canvas.getContext("2d");
+    		var scaleFactor = backingScale(ctx);
+
+    		canvas.width = iWidth;
+    		canvas.height = iHeight;
+
+    		canvas.style.width = iWidth/2;
+    		canvas.style.height = iHeight/2;
+
+            //alert(iWidth);
+            //alert(iHeight);
+            //alert(scaleFactor);
+
+    		canvas.getContext('2d').scale(scaleFactor,scaleFactor);
+
+            canvas.addEventListener('touchstart', function(e) {
+                alert("touchscreen!");
+                var x = e.touches[0].pageX/2;
+                var y = e.touches[0].pagey/2;
+            //var touchx = event.touches[0].pageX;
+            //var touchy = event.touches[0].pagey;
+                food_list.push(new Food(x,y,5));
+
+            });
+
+    		for (var i = 0; i < amoebaes_list.length; i++) {
+    			amoebaes_list[i].DrawOut(canvas);
+    		}
+
+    		for (var i = 0; i < food_list.length; i++) {
+    			food_list[i].DrawOut(canvas);
+    		}
+    	}
+
+    	function backingScale(context) {
+    		if ('devicePixelRatio' in window) {
+    			if (window.devicePixelRatio > 1) {
+    				return window.devicePixelRatio;
+    			}
+    		}
+    		return 1;
+    	}
+
+    	function Generateamoebae(starting_number){
+
+    		for (var i = 1; i <= starting_number; i++) {
+    			amoebaes_list.push(new Amoebae(getRndInteger(150/2,iWidth/2),getRndInteger(150/2,iHeight/2),getRndInteger(5/2,150/2)));
+    		}
+
+    		// for (var i = 0; i < amoebaes_list.length; i++) {
+    		// 	alert(amoebaes_list[i].GetPosX() + " " + amoebaes_list[i].GetPosY() + " " + amoebaes_list[i].GetSensing() + " " + amoebaes_list[i].GetMoveX() + " " + amoebaes_list[i].GetMoveY());
+    		// }
+    		
+    		draw();
+    	}
+
+    	function getRndInteger(min, max) {
+    		return Math.floor(Math.random() * (max - min) ) + min;
+    	}
+
+    	function getRndMinusOrPlus() {
+    		var minorplus = getRndInteger(-1, 2);
+    		if(minorplus == 0)
+    		{
+    			minorplus = getRndMinusOrPlus();
+    		}
+    		return minorplus;
+    	}
+    	class Food{
+            // GetColor()
+            // {
+            //     return this.color;
+            // }
+
+            // SetColor(color){
+            //     this.color = color;
+            // }
+
+    		GetPosX(){
+    			return this.positionx;
+    		}
+    		GetPosY(){
+    			return this.positiony;
+    		}
+
+    		GetSize(){
+    			return this.size;
+    		}
+
+    		constructor(positionx,positiony,size) {
+    			this.positionx = positionx;
+    			
+    			this.positiony = positiony;
+
+    			this.size = size;
+
+    			this.color = '#6B462E';
+    		}
+
+    		DrawOut(canvas)
+    		{
+    			if (canvas.getContext)
+    			{
+    				var ctx = canvas.getContext('2d');
+
+    				var circle = new Path2D();
+    				circle.moveTo(this.positionx, this.positiony);
+    				circle.arc(this.positionx, this.positiony, this.size/2, 0, 2 * Math.PI);
+    				ctx.fillStyle = this.color;
+    				ctx.fill(circle);
+    				var sensRange = new Path2D();
+    				ctx.strokeStyle = "#261910";
+    				ctx.stroke(sensRange);
+    			}
+    		}
+    	}
+
+    	function AddFood(event){
+
+    		var x = event.clientX/2;
+    		var y = event.clientY/2;
+            //var touchx = event.touches[0].pageX;
+            //var touchy = event.touches[0].pagey;
+    		food_list.push(new Food(x,y,5));
+    	}
+
+    	class Amoebae {
+            GetLife(){
+                return this.life;
+            }
+            SetLife(value){
+                this.life = value;
+            }
+            GetColor()
+            {
+                return this.color;
+            }
+
+            SetColor(color){
+                this.color = color;
+            }
+    		GetPosX(){
+    			return this.positionx;
+    		}
+    		GetPosY(){
+    			return this.positiony;
+    		}
+
+    		GetSize(){
+    			return this.size;
+    		}
+
+    		GetSensing(){
+    			return this.sensingsize;
+    		}
+
+    		GetMoveX(){
+    			return this.movex;
+    		}
+    		GetMoveY(){
+    			return this.movey;
+    		}
+
+            SetSplitBro(splitbro){
+                this.splitBro = splitbro;
+            }
+
+    		constructor(positionx,positiony,size) {
+    			this.positionx = positionx;
+    			this.movex = getRndMinusOrPlus();
+    			
+    			this.positiony = positiony;
+    			this.movey = getRndMinusOrPlus();
+
+    			this.size = size;
+
+    			this.sensingsize = size*3;
+
+    			this.color = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+
+                this.life = getRndInteger((size*5),(size*10));
+    		}
+
+    		DrawOut(canvas)
+    		{
+    			if (canvas.getContext)
+    			{
+    				var ctx = canvas.getContext('2d');
+
+    				var circle = new Path2D();
+    				circle.moveTo(this.positionx, this.positiony);
+    				circle.arc(this.positionx, this.positiony, this.size/2, 0, 2 * Math.PI);
+    				ctx.fillStyle = this.color;
+    				ctx.fill(circle);
+    				var sensRange = new Path2D();
+    				sensRange.moveTo(this.positionx+this.sensingsize/2, this.positiony);
+    				sensRange.arc(this.positionx, this.positiony, this.sensingsize/2, 0, 2 * Math.PI);
+    				ctx.lineWidth = 2;
+    				ctx.strokeStyle = this.color;
+    				ctx.stroke(sensRange);
+    			}
+    		}
+
+    		Move(width,height){
+    			var width = width;
+    			var height = height;
+
+    			if ((this.positionx + this.size/2) >= width) {
+    				this.movex = -(this.movex);
+    			}
+
+    			if ((this.positionx - this.size/2) <= 0) {
+    				this.movex = -(this.movex);
+    			}
+
+    			if ((this.positiony + this.size/2) >= height) {
+    				this.movey = -(this.movey);
+    			}
+
+    			if ((this.positiony - this.size/2) <= 0) {
+    				this.movey = -(this.movey);
+    			}
+
+    			this.positionx += this.movex;
+    			this.positiony += this.movey;
+    		}
+    		IsTargetInRange(target,width,height){
+    			if (target != "") {
+
+	    			var closestTarget = target[0]
+
+	    			for (var i = 0; i < target.length; i++) {
+	    				var x1 = target[i].GetPosX();
+	    				var y1 = target[i].GetPosY();
+	    				var x2 = closestTarget.GetPosX();
+	    				var y2 = closestTarget.GetPosY();
+	    				if (VectorLength(x1,this.positionx,y1,this.positiony) < VectorLength(x2,this.positionx,y2,this.positiony)) {
+	    					closestTarget = target[i];
+	    				}
+	    			}
+
+                    if (this.splitBro == closestTarget) {
+                        return false;
+                    }
+	    			else if (IsPointInCircle(this.positionx,closestTarget.GetPosX(),this.positiony,closestTarget.GetPosY(),this.sensingsize/2)){
+	    				this.MoveTowardTarget(closestTarget,target,width,height);
+	    				return true;
+	    			}
+	    		}
+    			return false;
+    		}
+    		MoveTowardTarget(target,targetList,width,height){
+                //alert(target.constructor.name);
+                var amIEscapeing = false;
+                if (target.constructor.name == "Amoebae" && target.GetSize() > this.size) {
+                    amIEscapeing = true;
+                    if (target.GetPosX() > this.positionx) {
+                        if (this.movex > 0) {
+                            this.movex = -(this.movex);
+                        }
+                    }
+                    else if (target.GetPosX() < this.positionx) {
+                        if (this.movex > 0) {
+                            this.movex = -(this.movex);
+                        }
+                    }
+                    if (target.GetPosY() > this.positiony) {
+                        if (this.movey > 0) {
+                            this.movey = -(this.movey);
+                        }
+                    }
+                    else if (target.GetPosY() < this.positiony) {
+                        if (this.movey > 0) {
+                            this.movey = -(this.movey);
+                        }
+                    }
+                    this.Move(width,height);
+                }
+                else{
+        			if (target.GetPosX() > this.positionx) {
+        				this.positionx++;
+        			}
+        			else if (target.GetPosX() < this.positionx) {
+        				this.positionx--;
+        			}
+
+        			if (target.GetPosY() > this.positiony) {
+        				this.positiony++;
+        			}
+        			else if (target.GetPosY() < this.positiony) {
+        				this.positiony--;
+        			}
+                }
+                if (!amIEscapeing) {
+        			if (IsPointInCircle(this.positionx,target.GetPosX(),this.positiony,target.GetPosY(),this.size/2)) {
+                        if (target.constructor.name == "Amoebae") {
+                            this.Merge(target,targetList);
+                        }
+                        else{
+                            this.size++;
+                            this.sensingsize++;
+                            removeObjectFromList(target,targetList);
+                        }
+    					if(this.DoISplit()){
+    						this.Split();
+    					}
+        			}
+                }
+    		}
+    		DoISplit(){
+    			if((Math.pow(this.size,2)*Math.PI)>((iWidth*iHeight)/50)){
+    				return true;
+    			}
+    			return false;
+    		}
+
+    		Split(){
+                if (this.life > 1) {
+
+                    this.life--;
+
+        			this.size = this.size/2;
+        			this.sensingsize = this.size*3;
+
+        			var newPosX;
+        			var newPosy;
+
+        			if ((this.positionx+this.size)>iWidth) {
+        				newPosX = this.positionx-this.size;
+        			}
+        			else if ((this.positionx-this.size)<0) {
+        				newPosX = this.positionx+this.size;
+        			}
+        			else{
+        				this.positionx = this.positionx-this.size;
+        				newPosX = this.positionx+this.size;	
+        			}
+
+        			if ((this.positiony+this.size)>iHeight) {
+        				newPosY = this.positiony-this.size;
+        			}
+        			else if ((this.positiony-this.size)<0) {
+        				newPosy = this.positiony+this.size;
+        			}
+        			else{
+        				newPosy = this.positiony;	
+        			}
+
+                    var newAmoeba = new Amoebae(newPosX,newPosy,this.size);
+                    newAmoeba.SetColor(this.color);
+                    newAmoeba.SetLife(this.life);
+                    this.SetSplitBro(newAmoeba);
+
+                    newAmoeba.SetSplitBro(this);
+
+                    amoebaes_list.push(newAmoeba);
+                }
+                else
+                {
+                    removeObjectFromList(this,amoebaes_list);
+                }
+    		}
+
+            Merge(target,targetList){
+                if (!target.GetColor() == this.color) {
+                    this.life += target.GetLife();
+                }
+                this.size += target.GetSize();
+                this.sensingsize += target.GetSensing();
+
+                removeObjectFromList(target,amoebaes_list);
+                //alert("merge should be implemented here!");
+            }
+    	}
+    	function IsPointInCircle(x1,x2,y1,y2,r){
+    		if (Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)) < r){
+    			//alert("im hear");
+    			return true;
+    		}
+    		return false;
+    	}
+    	function VectorLength(x1,x2,y1,y2){
+    		var out = (Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)));
+    		return out;
+    	}
+        function removeObjectFromList(target,targetList){
+            var index = targetList.indexOf(target);
+            if (index > -1) {
+                targetList.splice(index, 1);
+            }
+        }
+    </script>
+</body>
+</html>
