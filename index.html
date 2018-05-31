@@ -39,7 +39,7 @@
         foldermain.add( parameters, 'start' ).name("Amőba generálása");
         foldermain.open();
     </script>
-    <canvas id="level" onclick="AddFood(event)"></canvas>
+    <canvas id="level" onclick="AddFood(event)" ontouchstart="AddFoodMobile(event)"></canvas>
     <script>
 
     	var iWidth = (window.innerWidth-(window.innerWidth/100));
@@ -197,6 +197,12 @@
             //var touchy = event.touches[0].pagey;
     		food_list.push(new Food(x,y,5));
     	}
+
+        function AddFoodMobile(event){
+            var x = event.touches[0].pageX;
+            var y = event.touches[0].pagey;
+            food_list.push(new Food(x,y,5));
+        }
 
     	class Amoebae {
             GetLife(){
