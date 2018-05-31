@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8" name="viewport" content="width=device-width">
-	<title>Title of the document</title>
+	<meta charset="UTF-8" name="viewport" content="width=device-width"> <!-- to make it work better on mobile devices -->
+	<title>Amoabae</title>
 	<style>
-    * { -webkit-tap-highlight-color:rgba(0,0,0,0); }
+    * { -webkit-tap-highlight-color:rgba(0,0,0,0); }/*to make it work better on mobile devices*/
     html {
-        touch-action: manipulation;
+        touch-action: manipulation;/*to make it work better on mobile devices*/
     }
 	body{
 		height: 100vh;
@@ -21,35 +21,41 @@
 <body>
 	<script src="dat.gui.min.js"></script>
 	<script defer="defer">
-		var starting_number = 1;
-		var amoebaes_list = [];
-		var food_list = [];
+        var sameSpecies = false; //variable to avoid IsAllTheSame() to alert in every loop when it's true
+		var starting_number = 1; //make at least one amoabae
+		var amoebaes_list = []; //the list of the created amoabaes
+		var food_list = []; //list of created food items
         //var color_list = [];
-		
+// Menu with DAT GUI		
 		var gui = new dat.GUI({width: 390});
-// Főmenü paraméterei-----------------------------------------------------------
+// Parameters for main menu
 		var parameters =
 		{
-		    forgatas: false, // boolean (checkbox)
 		    starting_num : 1,
 		    start: function() { Generateamoebae(starting_number) },
+            restart: function() {document.location.reload(true)},
 		};
-// Paraméterek hozzáadása és kiegészitése qa GUI-hoz--------------------------
+// Connecting parameters to the GUI
 
-		var foldermain = gui.addFolder('Főadatok');/*Folder*/
+		var foldermain = gui.addFolder('Főadatok');
 		var Startingnum = foldermain.add(parameters, 'starting_num').min(1).max(5).step(1).name('A kezdő amőbák száma').listen();
-        Startingnum.onChange(function(value) // onFinishChange
+        Startingnum.onChange(function(value)
         	{starting_number = Math.round(value)});
         foldermain.add( parameters, 'start' ).name("Amőba generálása");
+        foldermain.add(parameters, 'restart').name("Restart the game and the page")
         foldermain.open();
+//End of DAT GUI generatin
     </script>
-    <canvas id="level" onclick="AddFood(event)"></canvas>
+    <canvas id="level" onclick="AddFood(event)"></canvas><!-- my main canvas -->
     <script>
-
+//Globale variable generation
+        var canvas = document.getElementById("level");
+        var ctx = canvas.getContext("2d");
+        var scaleFactor = backingScale(ctx);//get sacel factor to support bothe retina and non retina devices
     	var iWidth = (window.innerWidth-(window.innerWidth/100));
     	var iHeight = (window.innerHeight-(window.innerHeight/50));
 
-    	function loop(timestamp) {
+    	function loop(timestamp) {//the main loop
     		var progress = timestamp - lastRender
 
     		for (var i = 0; i < amoebaes_list.length; i++) {
@@ -57,7 +63,7 @@
                 removeObjectFromList(tempArray[i],tempArray);
                 if (!amoebaes_list[i].IsTargetInRange(tempArray,iWidth,iHeight)){
                     if (!amoebaes_list[i].IsTargetInRange(food_list,iWidth,iHeight)){
-    				    amoebaes_list[i].Move(iWidth/2,iHeight/2);
+    				    amoebaes_list[i].Move(iWidth/scaleFactor,iHeight/scaleFactor);
                     }
                 }
     		}
@@ -72,33 +78,14 @@
 
 
     	function draw() {
-    		var canvas = document.getElementById("level");
-    		var ctx = canvas.getContext("2d");
-    		var scaleFactor = backingScale(ctx);
 
     		canvas.width = iWidth;
     		canvas.height = iHeight;
 
-    		canvas.style.width = iWidth/2;
-    		canvas.style.height = iHeight/2;
-
-            //alert(iWidth);
-            //alert(iHeight);
-            //alert(scaleFactor);
+    		canvas.style.width = iWidth/scaleFactor;
+    		canvas.style.height = iHeight/scaleFactor;
 
     		canvas.getContext('2d').scale(scaleFactor,scaleFactor);
-
-            //canvas.addEventListener('touchstart', function(e) {
-                //alert("touchscreen!");
-                //var x = e.touches[0].pageX/2;
-                //var y = e.touches[0].pagey/2;
-                //var x = e.PageX;
-                //var y = e.Pagey;
-            //var touchx = event.touches[0].pageX;
-            //var touchy = event.touches[0].pagey;
-                //food_list.push(new Food(x,y,5));
-
-            //});
 
     		for (var i = 0; i < amoebaes_list.length; i++) {
     			amoebaes_list[i].DrawOut(canvas);
@@ -121,13 +108,11 @@
     	function Generateamoebae(starting_number){
 
     		for (var i = 1; i <= starting_number; i++) {
-    			amoebaes_list.push(new Amoebae(getRndInteger(150/2,iWidth/2),getRndInteger(150/2,iHeight/2),getRndInteger(5/2,150/2)));
+    			amoebaes_list.push(new Amoebae(getRndInteger(150/scaleFactor,iWidth/scaleFactor),getRndInteger(150/scaleFactor,iHeight/scaleFactor),getRndInteger(5/scaleFactor,150/scaleFactor)));
     		}
-
-    		// for (var i = 0; i < amoebaes_list.length; i++) {
-    		// 	alert(amoebaes_list[i].GetPosX() + " " + amoebaes_list[i].GetPosY() + " " + amoebaes_list[i].GetSensing() + " " + amoebaes_list[i].GetMoveX() + " " + amoebaes_list[i].GetMoveY());
-    		// }
     		
+            sameSpecies = IsAllTheSame();
+
     		draw();
     	}
 
@@ -144,14 +129,6 @@
     		return minorplus;
     	}
     	class Food{
-            // GetColor()
-            // {
-            //     return this.color;
-            // }
-
-            // SetColor(color){
-            //     this.color = color;
-            // }
 
     		GetPosX(){
     			return this.positionx;
@@ -195,18 +172,12 @@
     	function AddFood(event){
             //alert(event.type);
 
-    		var x = event.clientX/2;
-    		var y = event.clientY/2;
+    		var x = event.clientX/scaleFactor;
+    		var y = event.clientY/scaleFactor;
             //var touchx = event.touches[0].pageX;
             //var touchy = event.touches[0].pagey;
     		food_list.push(new Food(x,y,5));
     	}
-
-        function AddFoodMobile(event){
-            var x = event.touches[0].pageX;
-            var y = event.touches[0].pagey;
-            food_list.push(new Food(x,y,5));
-        }
 
     	class Amoebae {
             GetLife(){
@@ -443,6 +414,8 @@
                 {
                     removeObjectFromList(this,amoebaes_list);
                 }
+
+                rules();
     		}
 
             Merge(target,targetList){
@@ -453,12 +426,10 @@
                 this.sensingsize += target.GetSensing();
 
                 removeObjectFromList(target,amoebaes_list);
-                //alert("merge should be implemented here!");
             }
     	}
     	function IsPointInCircle(x1,x2,y1,y2,r){
     		if (Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)) < r){
-    			//alert("im hear");
     			return true;
     		}
     		return false;
@@ -472,6 +443,56 @@
             if (index > -1) {
                 targetList.splice(index, 1);
             }
+        }
+        function rules(){
+
+            if (IsListEmpty()) {
+                alert("Your amoebaes died out, they might died becouse of splitting too much and/or inbreeding!");
+            }
+            else if (IsTwoLeft()) {
+                alert("You only have two or less amoebaes, if you don't add more amoebaes or food your amoebaes might continue to exist but they are practicly dead. Caution more food instead of more amoebaes can cose inbreeding!")
+            }
+            else if (!sameSpecies) {
+                if (IsAllTheSame()) {
+                    alert("All your amoebae is from the same species, if you do not add other amoebaes your amoebaes will inbreed and might die out!");
+                }
+            }
+            //80%colony(your amobes population reache d the 80% of the screen --> how?)
+        }
+        function IsAllTheSame(){
+            var color = amoebaes_list[0].color;
+
+            for (var i = 0; i < amoebaes_list.length; i++) {
+                if(amoebaes_list[i].color != color){
+                    return false;
+                }
+            }
+
+            sameSpecies = true;
+            return true;
+        }
+        function IsTwoLeft(){
+            var count = 0;
+
+            for (var i = 0; i < amoebaes_list.length; i++) {
+                count++;
+            }
+
+            if (count <= 2) {
+                return true;
+            }
+            return false;
+        }
+
+        function IsListEmpty(){
+            if (amoebaes_list == "") {
+                return true;
+            }
+            return false;
+        }
+
+        function IsPopulationHighEnough(){
+            return false;
         }
     </script>
 </body>
